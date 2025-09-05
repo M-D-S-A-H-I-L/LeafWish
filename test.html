@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant Disease Prediction Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f2f2f2;
+    }
+    h2 {
+      text-align: center;
+      color: green;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .preview {
+      margin-top: 15px;
+      text-align: center;
+    }
+    .preview img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .results {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e8ffe8;
+      border-radius: 8px;
+    }
+    button {
+      display: block;
+      margin: 15px auto;
+      padding: 10px 20px;
+      background: green;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: darkgreen;
+    }
+  </style>
+</head>
+<body>
+  <h2>🌱 Plant Disease Prediction</h2>
+  <div class="container">
+    <input type="file" id="fileInput" accept="image/*" />
+    <button onclick="uploadImage()">Predict</button>
+
+    <div class="preview" id="preview"></div>
+    <div class="results" id="results"></div>
+  </div>
+
+  <script>
+    async function uploadImage() {
+      const fileInput = document.getElementById("fileInput");
+      const resultsDiv = document.getElementById("results");
+      const previewDiv = document.getElementById("preview");
+
+      if (!fileInput.files[0]) {
+        alert("Please select an image!");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // ✅ Your backend API URL
+      const API_URL = "http://127.0.0.1:8000/predict";
+
+      // Show preview
+      previewDiv.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="Preview">`;
+      resultsDiv.innerHTML = "⏳ Processing...";
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Prediction failed");
+        }
+
+        const data = await response.json();
+
+        resultsDiv.innerHTML = `
+          <h3>Prediction Results:</h3>
+          <p><b>Predicted Disease:</b> ${data.predicted_class}</p>
+          <p><b>Confidence:</b> ${(data.confidence * 100).toFixed(2)}%</p>
+          <p><b>Class Probabilities:</b></p>
+          <ul>
+            ${data.all_probabilities
+              .map((p, i) => `<li>Class ${i}: ${(p * 100).toFixed(2)}%</li>`)
+              .join("")}
+          </ul>
+        `;
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = `<p style="color:red">❌ Error: ${err.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
